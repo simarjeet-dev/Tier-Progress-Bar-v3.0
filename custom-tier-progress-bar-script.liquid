@@ -1,0 +1,102 @@
+{% comment %}Tier Progress Bar Javascript{% endcomment %}
+{% comment %}
+{%- if settings.show_tiered_progress_bar and shop.metafields.global.tier_data != blank -%}
+  {%- render 'custom-tier-progress-bar-script' -%} in layout/theme.liquid
+{%- endif -%}
+{% endcomment %}
+
+<script type="text/javascript">
+  window.tierData = {{ shop.metafields.global.tier_data }};
+  window.tierProgressType = "{{ settings.tier_progress_type }}";
+
+  window.preCheckoutCheck = function(buttonElement) {
+    buttonElement.classList.add('loading');
+    const tiers = window?.tierData?.tier;
+    if (!Array.isArray(tiers)) return console.error("Invalid or missing tier data");
+
+    fetch('/cart.js')
+      .then(res => res.json())
+      .then(cart => {
+        const total = cart.total_price / 100;
+        const inCart = cart.items.map(i => i.variant_id);
+        const updates = {};
+
+        if (window.tierProgressType === "replace") {
+          const bestTier = tiers.reduce((acc, tier) => total >= tier.threshold ? tier : acc, null);
+          tiers.forEach(t => updates[t.variant_id] = (bestTier?.variant_id === t.variant_id) ? 1 : 0);
+        }
+
+        if (window.tierProgressType === "add") {
+          tiers.forEach(t => {
+            const has = inCart.includes(t.variant_id);
+            if (total >= t.threshold && !has) updates[t.variant_id] = 1;
+            if (total < t.threshold && has) updates[t.variant_id] = 0;
+          });
+        }
+
+        if (Object.keys(updates).length) {
+          return fetch('/cart/update.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ updates })
+          });
+        }
+      })
+      .then(() => {
+        /*setTimeout(() => {
+          const btn = document.getElementById("checkout");
+          if (btn) btn.click();
+          else console.error("Checkout button not found");
+        }, 500);*/
+        setTimeout(() => {
+          handleOcc();
+        }, 500);
+      })
+      .catch(err => console.error("Pre-checkout error:", err));
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const tiers = window?.tierData?.tier;
+    if (!Array.isArray(tiers)) return;
+
+    fetch('/cart.js')
+      .then(res => res.json())
+      .then(cart => {
+        const inCart = cart.items.map(item => item.variant_id);
+        const updatesToRemove = {};
+  
+        tiers.forEach(tier => {
+          if (inCart.includes(tier.variant_id)) {
+            updatesToRemove[tier.variant_id] = 0;
+          }
+        });
+  
+        if (Object.keys(updatesToRemove).length > 0) {
+          // Request updated sections as well
+          return fetch('/cart/update.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+              updates: updatesToRemove,
+              sections: ["mini-cart", "cart-icon-bubble"]
+            })
+          })
+          .then(async response => {
+            if (!response.ok) {
+              throw new Error("Failed to update cart: " + response.statusText);
+            }
+            const result = await response.json();
+  
+            // Update cart icon bubble count
+            const htmlParser = new DOMParser();
+            const bubbleString = result.sections["cart-icon-bubble"];
+            const bubbleHtml = htmlParser.parseFromString(bubbleString, "text/html");
+            const newBubble = bubbleHtml.querySelector(".cart-count-bubble");
+            const existingBubble = document.querySelector(".cart-count-bubble");
+            existingBubble.replaceWith(newBubble);
+          });
+        }
+      })
+      .catch(err => console.error("Error removing tier products on load:", err));
+  });
+</script>
