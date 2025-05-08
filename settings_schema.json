@@ -1,0 +1,26 @@
+{
+  "type": "header",
+  "content": "Tier offer progress bar"
+},
+{
+  "type": "checkbox",
+  "id": "show_tier_progress_bar",
+  "default": false,
+  "label": "Enable tier progress bar"
+},
+{
+  "type": "radio",
+  "id": "tier_progress_type",
+  "label": "Tier progress bar behaviour",
+  "options": [
+    {
+      "value": "add",
+      "label": "Add"
+    },
+    {
+      "value": "replace",
+      "label": "Replace"
+    }
+  ],
+  "default": "add"
+}
