@@ -1,22 +1,22 @@
 {
   "tier": [
     {
-      "threshold": 800,
-      "variant_id": 41297616371758,
-      "product_handle": "fresh-unisex-perfume-20ml-progress-bar",
-      "label": "Fresh Unisex Perfume"
+      "threshold": 700,
+      "variant_id": 41370581041198,
+      "product_handle": "hydrating-sunscreen-spf-50-pa-50ml-progress-bar-free-gift",
+      "label": "Hydrating Sunscreen"
     },
     {
-      "threshold": 1100,
-      "variant_id": 41297619812398,
-      "product_handle": "skai-aquatic-unisex-perfume-20ml-progress-bar",
-      "label": "Skai Unisex Perfume"
+      "threshold": 1000,
+      "variant_id": 41370580975662,
+      "product_handle": "skai-aquatic-shower-gel-250ml-progress-bar-free-gift",
+      "label": "Skai Shower Gel"
     },
     {
-      "threshold": 1500,
-      "variant_id": 41297620009006,
-      "product_handle": "impact-man-perfume-20ml-progress-bar",
-      "label": "Impact Unisex Perfume"
+      "threshold": 1300,
+      "variant_id": 41370579402798,
+      "product_handle": "magnetic-him-mood-collection-gift-set-c-glow-face-wash",
+      "label": "Perfume Gift Set"
     }
   ]
 }
