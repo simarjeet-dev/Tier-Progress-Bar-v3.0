@@ -1,0 +1,349 @@
+{% comment %}Tier Progress Bar{% endcomment %}
+{% comment %}
+{%- if settings.show_tier_progress_bar and shop.metafields.global.tier_data != blank -%}
+  {% render 'custom-tier-progress-bar' %} in sections/mini-cart.liquid
+{%- endif -%}
+{% endcomment %}
+
+{{ 'component-free-shipping.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign tier_data = shop.metafields.global.tier_data.value
+  assign tiers = tier_data.tier
+  assign total_tiers = tiers.size
+  assign total_price = cart.total_price
+  assign highest_tier = tiers.last.threshold | times: 100
+  assign progress_type = settings.tier_progress_type | default: 'add'
+
+  assign previous_threshold = 0
+  assign next_threshold = highest_tier
+  assign unlocked_index = 0
+
+  for tier in tiers
+    assign tier_threshold = tier.threshold | times: 100
+    if total_price >= tier_threshold
+      assign unlocked_index = forloop.index
+      assign previous_threshold = tier_threshold
+    elsif total_price < tier_threshold and next_threshold > tier_threshold
+      assign next_threshold = tier_threshold
+    endif
+  endfor
+
+  assign step_percent = 100 | divided_by: total_tiers
+  assign range = next_threshold | minus: previous_threshold
+  assign progress_in_range = total_price | minus: previous_threshold
+
+  if range > 0
+    assign range_progress = progress_in_range | times: step_percent | divided_by: range
+  else
+    assign range_progress = 0
+  endif
+
+  assign progress_percent = unlocked_index | times: step_percent | plus: range_progress
+
+  if total_price > highest_tier
+    assign progress_percent = 100
+  endif
+
+  assign remaining_amount = next_threshold | minus: total_price | money_without_trailing_zeros
+-%}
+
+<div class="free-shipping tier-progress-bar">
+  {%- if total_price >= highest_tier -%}
+    <span class="free-shipping__text free-shipping__text--success">
+      🎉 You've unlocked all FREE Gifts
+    </span>
+  {%- else -%}
+    <span class="free-shipping__text">
+      Shop for <price-money class="price"><bdi>{{ remaining_amount }}</bdi></price-money> more to Unlock a FREE Gift
+    </span>
+  {%- endif -%}
+
+  <div class="progress-wrapper">
+    <div class="progress-container">
+      <div class="progress-track">
+        <div class="progress-fill" style="width: {{ progress_percent }}%;"></div>
+        <div class="start-marker">
+          <div class="start-circle"></div>
+        </div>
+      </div>
+      
+      <div class="tier-markers-flex">
+        {%- for tier in tiers -%}
+          {%- assign free_product = all_products[tier.product_handle] -%}
+          {%- assign is_unlocked = false -%}
+          {%- assign is_current_tier = false -%}
+          
+          {%- if forloop.index <= unlocked_index -%}
+            {%- assign is_unlocked = true -%}
+            {%- if progress_type == 'replace' and forloop.index == unlocked_index -%}
+              {%- assign is_current_tier = true -%}
+            {%- endif -%}
+          {%- endif -%}
+          
+          {%- assign marker_position = forloop.index | times: 100 | divided_by: total_tiers -%}
+          
+          <div class="tier-marker-box" style="left: {{ marker_position }}%;">
+            <div class="product-img-box{% if is_unlocked %} unlocked{% endif %}">
+              {%- if free_product.featured_image != blank -%}
+                {%- if progress_type == 'add' or is_current_tier or is_unlocked == false -%}
+                  {{ free_product.featured_image | image_url: width: 50 | image_tag:
+                      alt: free_product.featured_image.alt,
+                      class: 'product-img',
+                      loading: 'lazy',
+                      fetchpriority: 'low',
+                      widths: '50, 100, 200'
+                  }}
+                {%- else -%}
+                  {%- if is_unlocked and progress_type == 'replace' -%}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 19C5 20.7 6.3 22 8 22H16C17.7 22 19 20.7 19 19V15H5V19ZM18 7H17.7C17.9 6.5 18 6 18 5.5C18 3.6 16.4 2 14.5 2C13.6 2 12.7 2.4 12 3.1C10.7 1.7 8.4 1.7 7.1 3C6 4.1 5.7 5.7 6.4 7H6C4.3 7 3 8.3 3 10V12C3 12.6 3.4 13 4 13H20C20.6 13 21 12.6 21 12V10C21 8.3 19.7 7 18 7ZM11 7H9.5C8.7 7 8 6.3 8 5.5C8 4.7 8.7 4 9.5 4C10.3 4 11 4.7 11 5.5V7ZM14.5 7H13V5.5C13 4.7 13.7 4 14.5 4C15.3 4 16 4.7 16 5.5C16 6.3 15.3 7 14.5 7Z" fill="#009951"/>
+                    </svg>
+                  {%- endif -%}
+                {%- endif -%}
+              {%- endif -%}
+            </div>
+            <div class="product-info">
+              <div class="product-label{% if is_unlocked %} unlocked{% endif %}{% if progress_type == 'replace' and is_unlocked and is_current_tier == false %} replaced{% endif %}">
+                {%- if is_unlocked -%}
+                  {%- if progress_type == 'replace' and is_current_tier -%}
+                    FREE
+                  {%- elsif progress_type == 'replace' and is_unlocked -%}
+                    Better gift added
+                  {%- else -%}
+                    FREE
+                  {%- endif -%}
+                {%- else -%}
+                  {{ tier.label }}
+                {%- endif -%}
+              </div>
+              <div class="price-tag{% if is_unlocked %} unlocked{% if progress_type == 'replace' and is_unlocked and is_current_tier == false %} replaced{% endif %}{% endif %}">
+                {%- if is_unlocked -%}
+                  {%- if progress_type == 'replace' and is_current_tier == false -%}
+                    <span class="replaced-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M8.5 4.5H4.5V3.5C4.5 3.1 4.65 2.75 4.95 2.45C5.55 1.85 6.5 1.85 7.05 2.45C7.25 2.65 7.35 2.9 7.45 3.15C7.5 3.4 7.8 3.55 8.05 3.5C8.3 3.45 8.5 3.15 8.4 2.9C8.3 2.45 8.05 2.05 7.75 1.75C7.3 1.25 6.65 1 6 1C4.6 1 3.5 2.1 3.5 3.5V4.5C2.65 4.5 2 5.15 2 6V9.5C2 10.35 2.65 11 3.5 11H8.5C9.35 11 10 10.35 10 9.5V6C10 5.15 9.35 4.5 8.5 4.5ZM6.5 8.5C6.5 8.8 6.3 9 6 9C5.7 9 5.5 8.8 5.5 8.5V7C5.5 6.7 5.7 6.5 6 6.5C6.3 6.5 6.5 6.7 6.5 7V8.5Z" fill="#009951"/>
+                      </svg>
+                    </span>
+                    <span class="tier-price">{{ tier.threshold | times: 100 | money_without_trailing_zeros }}</span>
+                  {%- else -%}
+                    <span class="unlock-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M8.5 4.5H4.5V3.5C4.5 3.1 4.65 2.75 4.95 2.45C5.55 1.85 6.5 1.85 7.05 2.45C7.25 2.65 7.35 2.9 7.45 3.15C7.5 3.4 7.8 3.55 8.05 3.5C8.3 3.45 8.5 3.15 8.4 2.9C8.3 2.45 8.05 2.05 7.75 1.75C7.3 1.25 6.65 1 6 1C4.6 1 3.5 2.1 3.5 3.5V4.5C2.65 4.5 2 5.15 2 6V9.5C2 10.35 2.65 11 3.5 11H8.5C9.35 11 10 10.35 10 9.5V6C10 5.15 9.35 4.5 8.5 4.5ZM6.5 8.5C6.5 8.8 6.3 9 6 9C5.7 9 5.5 8.8 5.5 8.5V7C5.5 6.7 5.7 6.5 6 6.5C6.3 6.5 6.5 6.7 6.5 7V8.5Z" fill="#009951"/>
+                      </svg>
+                    </span>
+                    <span class="tier-price">{{ tier.threshold | times: 100 | money_without_trailing_zeros }}</span>
+                  {%- endif -%}
+                {%- else -%}
+                  <span class="lock-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M7.08329 3.75004V2.91671C7.08329 1.75004 6.16663 0.833374 4.99996 0.833374C3.83329 0.833374 2.91663 1.75004 2.91663 2.91671V3.75004C2.20829 3.75004 1.66663 4.29171 1.66663 5.00004V7.91671C1.66663 8.62504 2.20829 9.16671 2.91663 9.16671H7.08329C7.79163 9.16671 8.33329 8.62504 8.33329 7.91671V5.00004C8.33329 4.29171 7.79163 3.75004 7.08329 3.75004ZM3.74996 2.91671C3.74996 2.20837 4.29163 1.66671 4.99996 1.66671C5.70829 1.66671 6.24996 2.20837 6.24996 2.91671V3.75004H3.74996V2.91671ZM5.41663 7.08337C5.41663 7.33337 5.24996 7.50004 4.99996 7.50004C4.74996 7.50004 4.58329 7.33337 4.58329 7.08337V5.83337C4.58329 5.58337 4.74996 5.41671 4.99996 5.41671C5.24996 5.41671 5.41663 5.58337 5.41663 5.83337V7.08337Z" fill="#FA4B0C"/>
+                    </svg>
+                  </span>
+                  <span class="tier-price">{{ tier.threshold | times: 100 | money_without_trailing_zeros }}</span>
+                {%- endif -%}
+              </div>
+            </div>
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.free-shipping.tier-progress-bar {
+  width: 100%;
+  padding-block: 0.5rem;
+}
+.free-shipping__text {
+  background-color: #11a847;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  display: block;
+  width: 100%;
+  font-weight: 400;
+}
+.free-shipping__text .price bdi {
+  color: #fff;
+  font-size: 13px !important;
+  font-weight: 600;
+}  
+.free-shipping__text--success {
+  background-color: #11a847;
+}
+.progress-wrapper {
+  width: 100%;
+  padding: 10px 8px;
+  background-color: #f5f5f5;
+  border: 1px solid #d9d9d9;
+}
+.progress-container {
+  position: relative;
+  width: 88%;
+  height: 106px;
+  min-height: 90px;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 22px;
+}
+.progress-track {
+  height: 5px;
+  width: 100%;
+  background-color: #e0e0e0;
+  position: relative;
+  z-index: 1;
+}
+.progress-fill {
+  position: absolute;
+  height: 100%;
+  background-color: #11a847;
+  border-radius: 2px;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  transition: width 0.3s ease;
+}
+.start-circle {
+  width: 15px;
+  height: 15px;
+  background-color: #11a847;
+  border-radius: 50%;
+}
+.tier-markers-flex {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 4;
+}
+.tier-marker-box {
+  position: absolute;
+  transform: translateX(-50%);
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+.start-marker {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.product-img-box {
+  width: 50px;
+  height: 50px;
+  background-color: white;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0;
+}
+.product-img-box.unlocked {
+  border: 2px solid #11a847;
+}
+.product-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: blur(1px);
+}
+.product-img-box.unlocked .product-img {
+  filter: blur(0);
+}
+.product-info {
+  width: 80px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.start-info {
+  max-width: 50px;
+}
+.product-label {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.2;
+  min-height: 36px;
+}
+.product-label.unlocked {
+  color: #11a847;
+  font-weight: 600;
+}
+.product-label.replaced {
+  color: #757575;
+  font-weight: 500;
+}  
+.price-tag {
+  background-color: #ffe9e9;
+  padding: 0px 5px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+}
+.price-tag.unlocked {
+  background-color: #e5f7ea;
+}
+.price-tag.replaced {
+  display: none;
+}
+.lock-icon {
+  margin-right: 4px;
+  color: #ff6b6b;
+}
+.unlock-icon {
+  margin-right: 4px;
+  color: #11a847;
+}
+.unlock-icon svg, .lock-icon svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+} 
+.tier-price {
+  font-weight: 600;
+  color: #ff6b6b;
+  font-size: 10px;
+}
+.price-tag.unlocked .tier-price {
+  color: #11a847;
+  text-decoration: line-through;
+}
+/* Mobile CSS */  
+@media screen and (max-width: 749px) {
+  .product-img-box {
+    width: 40px;
+    height: 40px;
+  }
+  .product-label {
+    font-size: 10px;
+    min-height: 30px;
+  }
+  .price-tag {
+    min-width: 60px;
+    padding-inline: 5px;
+  }
+  .lock-icon {
+    font-size: 10px;
+  }
+  .product-info {
+    width: 70px;
+  }
+  .start-info {
+    max-width: 40px;
+  }
+  .progress-container {
+    height: 90px;
+    padding-top: 18px;
+  }
+}
+</style>
