@@ -54,19 +54,22 @@
 - Add to the Mini Cart checkout button `</div>`
 ```
 {% # Custom checkout button for Tier Progress Bar preCheckoutCheck function %}
+{%- if settings.show_tier_progress_bar and shop.metafields.global.tier_data != blank -%}
 <button type="button" class="button skip-zecpe-handler" onclick="window.preCheckoutCheck(this)" data-skip-zecpe="true">
   {{ 'sections.cart.checkout' | t }}
   {%- if settings.disable_view_cart -%}
     <span class="price" id="mini-cart-subtotal">{{ cart.total_price | money_with_currency }}</span>
   {%- endif -%}
 </button>
+{%- else -%}
 {% # Custom checkout button for Tier Progress Bar preCheckoutCheck function ends here %}
-<button class="button" name="checkout" id="checkout" type="submit" style="display:none;">
+<button class="button" name="checkout" id="checkout" type="submit">
   {{ 'sections.cart.checkout' | t }}
   {%- if settings.disable_view_cart -%}
     <span class="price" id="mini-cart-subtotal">{{ cart.total_price | money_with_currency }}</span>
   {%- endif -%}
 </button>
+{%- endif -%}
 ```
 #### layout/theme.liquid in `</body>`
 ```
