@@ -1,4 +1,4 @@
-# Tiered-Progress-Bar
+# Tier Progress Bar v3.0
 
 #### Files
 - `snippets/custom-tier-progress-bar.liquid`
