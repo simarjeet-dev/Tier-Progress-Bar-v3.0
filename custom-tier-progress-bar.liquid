@@ -13,7 +13,7 @@
   assign total_tiers = tiers.size
   assign total_price = cart.total_price
   assign highest_tier = tiers.last.threshold | times: 100
-  assign progress_type = settings.tier_progress_type | default: 'add'
+  assign progress_type = settings.tier_progress_type
 
   assign previous_threshold = 0
   assign next_threshold = highest_tier
