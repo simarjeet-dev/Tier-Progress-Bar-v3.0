@@ -1,0 +1,4 @@
+type Output {
+  enableProgressBar: Boolean!
+  tierType: String!
+}

@@ -1,0 +1,11 @@
+type Output {
+  variant1Missing: Boolean!
+  variant1GID: String!
+
+  variant2Missing: Boolean!
+  variant2GID: String!
+
+  variant3Missing: Boolean!
+  variant3GID: String!
+
+}

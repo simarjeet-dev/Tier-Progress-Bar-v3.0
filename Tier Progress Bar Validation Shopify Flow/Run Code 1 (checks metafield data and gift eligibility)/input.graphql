@@ -1,0 +1,9 @@
+query {
+  shop {
+    metafields {
+      namespace
+      key
+      value
+    }
+  }
+}

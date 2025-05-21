@@ -1,0 +1,4 @@
+type Output {
+  variantMissing: Boolean!
+  variantGID: String!
+}

@@ -1,0 +1,21 @@
+query {
+  shop {
+    metafields {
+      namespace
+      key
+      value
+    }
+  }
+  order {
+    totalPriceSet {
+      shopMoney {
+        amount
+      }
+    }
+    lineItems {
+      variant {
+        id
+      }
+    }
+  }
+}
