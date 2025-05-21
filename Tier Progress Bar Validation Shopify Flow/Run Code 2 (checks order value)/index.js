@@ -5,7 +5,7 @@ export default function main(input) {
 
   try {
     const data = JSON.parse(mf.value);
-    if (!data.enable_progress_bar || !Array.isArray(data.tier) || data.tier.length === 0) return { eligibleForGift: false };
+    if (!data.enable_tier_progress_bar || !Array.isArray(data.tier) || data.tier.length === 0) return { eligibleForGift: false };
     const minThreshold = Math.min(...data.tier.map(t => t.threshold || Infinity));
     return { eligibleForGift: orderTotal >= minThreshold };
   } catch {

@@ -1,4 +1,6 @@
 {
+  "enable_tier_progress_bar": false,
+  "tier_progress_type": "replace",
   "tier": [
     {
       "threshold": 700,

@@ -5,9 +5,14 @@
 {%- endif -%}
 {% endcomment %}
 
+{%- liquid
+  assign tier_data = shop.metafields.global.tier_data.value
+  assign progress_type = tier_data.tier_progress_type | default: 'add'
+-%}    
+
 <script type="text/javascript">
-  window.tierData = {{ shop.metafields.global.tier_data }};
-  window.tierProgressType = "{{ settings.tier_progress_type }}";
+  window.tierData = {{ tier_data }};
+  window.tierProgressType = "{{ progress_type }}";
 
   window.preCheckoutCheck = function(buttonElement) {
     buttonElement.classList.add('loading');

@@ -12,13 +12,13 @@ export default function main(input) {
       return { enableProgressBar: false, tierType: "" };
     }
 
-    if (!parsedData.enable_progress_bar || !parsedData.tier_type || parsedData.tier_type.trim() === "") {
+    if (!parsedData.enable_tier_progress_bar || !parsedData.tier_progress_type || parsedData.tier_progress_type.trim() === "") {
       return { enableProgressBar: false, tierType: "" };
     }
 
     return {
       enableProgressBar: true,
-      tierType: parsedData.tier_type,
+      tierType: parsedData.tier_progress_type,
     };
   } catch {
     return { enableProgressBar: false, tierType: "" };
