@@ -6,5 +6,6 @@
   "type": "checkbox",
   "id": "show_tier_progress_bar",
   "default": false,
-  "label": "Enable tier progress bar"
+  "label": "Show tier progress bar",
+  "info": "Enable tier progress bar in {{shop.metafields.global.tier_data}} JSON metafield"
 }

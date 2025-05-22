@@ -12,6 +12,8 @@
 `{{ shop.metafields.global.tier_data }}`
 ```
 {
+  "enable_tier_progress_bar": true,
+  "tier_progress_type": "replace",
   "tier": [
     {
       "threshold": 700,
@@ -38,7 +40,7 @@
  - Add to the Mini Cart header `</div>`
 ```
 {% # Custom code for Tier Progress Bar functionality %}
-{%- if settings.show_tier_progress_bar and shop.metafields.global.tier_data != blank -%}
+{%- if settings.show_tier_progress_bar -%}
   {% render 'custom-tier-progress-bar' %}
 {%- endif -%}
 {% # Custom code for Tier Progress Bar functionality ends here %}
@@ -46,7 +48,7 @@
  - Add to the Mini Cart items `</div>`
 ```
 {% # custom code for Tier Progress Bar Free Item %}
-{%- if settings.show_tier_progress_bar and shop.metafields.global.tier_data != blank -%}
+{%- if settings.show_tier_progress_bar -%}
   {% render 'custom-tier-progress-bar-item' %}
 {% endif %}  
 {% # custom code for Tier Progress Bar Free Item ends here %}
@@ -54,7 +56,13 @@
 - Add to the Mini Cart checkout button `</div>`
 ```
 {% # Custom checkout button for Tier Progress Bar preCheckoutCheck function %}
-{%- if settings.show_tier_progress_bar and shop.metafields.global.tier_data != blank -%}
+{%- liquid
+  assign tier_data = shop.metafields.global.tier_data.value
+  if tier_data != blank
+    assign is_enabled = tier_data.enable_tier_progress_bar
+  endif
+-%}
+{%- if settings.show_tier_progress_bar and tier_data != blank and is_enabled -%}
 <button type="button" class="button skip-zecpe-handler" onclick="window.preCheckoutCheck(this)" data-skip-zecpe="true">
   {{ 'sections.cart.checkout' | t }}
   {%- if settings.disable_view_cart -%}
@@ -74,7 +82,7 @@
 #### layout/theme.liquid in `</body>`
 ```
 {% # Custom code for Tier Progress Bar functionality %}
-{%- if settings.show_tier_progress_bar and shop.metafields.global.tier_data != blank -%}
+{%- if settings.show_tier_progress_bar -%}
   {%- render 'custom-tier-progress-bar-script' -%}
 {%- endif -%}
 {% # Custom code for Tier Progress Bar functionality ends here %}

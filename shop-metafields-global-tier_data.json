@@ -1,5 +1,5 @@
 {
-  "enable_tier_progress_bar": false,
+  "enable_tier_progress_bar": true,
   "tier_progress_type": "replace",
   "tier": [
     {

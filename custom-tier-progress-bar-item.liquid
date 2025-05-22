@@ -1,172 +1,178 @@
 {% comment %}Tier Progress Bar Item{% endcomment %}
 {% comment %}
-{%- if settings.show_tier_progress_bar and shop.metafields.global.tier_data != blank -%}
+{%- if settings.show_tier_progress_bar -%}
   {% render 'custom-tier-progress-bar-item' %} in sections/mini-cart.liquid
 {% endif %}  
 {% endcomment %}
 
 {%- liquid
   assign tier_data = shop.metafields.global.tier_data.value
-  assign tiers = tier_data.tier
-  assign total_tiers = tiers.size
-  assign total_price = cart.total_price
-  assign highest_tier = tiers.last.threshold | times: 100
-  assign progress_type = tier_data.tier_progress_type | default: 'add'
-
-  assign previous_threshold = 0
-  assign next_threshold = highest_tier
-  assign unlocked_index = 0
-
-  for tier in tiers
-    assign tier_threshold = tier.threshold | times: 100
-    if total_price >= tier_threshold
-      assign unlocked_index = forloop.index
-      assign previous_threshold = tier_threshold
-    elsif total_price < tier_threshold and next_threshold > tier_threshold
-      assign next_threshold = tier_threshold
+    
+  if tier_data != blank
+    assign is_enabled = tier_data.enable_tier_progress_bar
+    assign tiers = tier_data.tier
+    assign total_tiers = tiers.size
+    assign total_price = cart.total_price
+    assign highest_tier = tiers.last.threshold | times: 100
+    assign progress_type = tier_data.tier_progress_type | default: 'add'
+  
+    assign previous_threshold = 0
+    assign next_threshold = highest_tier
+    assign unlocked_index = 0
+  
+    for tier in tiers
+      assign tier_threshold = tier.threshold | times: 100
+      if total_price >= tier_threshold
+        assign unlocked_index = forloop.index
+        assign previous_threshold = tier_threshold
+      elsif total_price < tier_threshold and next_threshold > tier_threshold
+        assign next_threshold = tier_threshold
+      endif
+    endfor
+  
+    assign step_percent = 100 | divided_by: total_tiers
+    assign range = next_threshold | minus: previous_threshold
+    assign progress_in_range = total_price | minus: previous_threshold
+  
+    if range > 0
+      assign range_progress = progress_in_range | times: step_percent | divided_by: range
+    else
+      assign range_progress = 0
     endif
-  endfor
-
-  assign step_percent = 100 | divided_by: total_tiers
-  assign range = next_threshold | minus: previous_threshold
-  assign progress_in_range = total_price | minus: previous_threshold
-
-  if range > 0
-    assign range_progress = progress_in_range | times: step_percent | divided_by: range
-  else
-    assign range_progress = 0
-  endif
-
-  assign progress_percent = unlocked_index | times: step_percent | plus: range_progress
-
-  if total_price > highest_tier
-    assign progress_percent = 100
-  endif
-
-  assign remaining_amount = next_threshold | minus: total_price | money_without_trailing_zeros
+  
+    assign progress_percent = unlocked_index | times: step_percent | plus: range_progress
+  
+    if total_price > highest_tier
+      assign progress_percent = 100
+    endif
+  
+    assign remaining_amount = next_threshold | minus: total_price | money_without_trailing_zeros
+  endif  
 -%}
 
 {% # Container for tier progress free items %}
-<div class="tier-progress-free-items">
-  {%- for tier in tiers -%}
-    {%- assign free_product = all_products[tier.product_handle] -%}
-    {%- assign is_unlocked = false -%}
-    {%- assign is_current_tier = false -%}
-
-    {% # Check if the current tier is unlocked %}
-    {%- if forloop.index <= unlocked_index -%}
-      {%- assign is_unlocked = true -%}
-      {%- if progress_type == 'replace' and forloop.index == unlocked_index -%}
-        {%- assign is_current_tier = true -%}
+{%- if tier_data != blank and is_enabled -%}
+  <div class="tier-progress-free-items">
+    {%- for tier in tiers -%}
+      {%- assign free_product = all_products[tier.product_handle] -%}
+      {%- assign is_unlocked = false -%}
+      {%- assign is_current_tier = false -%}
+  
+      {% # Check if the current tier is unlocked %}
+      {%- if forloop.index <= unlocked_index -%}
+        {%- assign is_unlocked = true -%}
+        {%- if progress_type == 'replace' and forloop.index == unlocked_index -%}
+          {%- assign is_current_tier = true -%}
+        {%- endif -%}
       {%- endif -%}
-    {%- endif -%}
-
-    {%- capture tier_progress_item -%}
-      <div class="tier-progress-box">
-        {% # Display product image %}
-        <div class="tier-product-image{% if is_unlocked %} unlocked{% endif %}">
-          {%- if free_product.featured_image != blank -%}
-            {{
-              free_product.featured_image
-              | image_url: width: 300
-              | image_tag:
-                alt: free_product.featured_image.alt,
-                loading: 'lazy',
-                fetchpriority: 'low',
-                widths: '50, 100, 200'
-            }}
-          {%- endif -%}
-        </div>
-
-        <div class="tier-product-info">
-          {% if free_product.title != blank %}
-            {% # Display product title %}
-            <span class="link product-title">{{ free_product.title }}</span>
-          {% endif %}
-
-          {%- if is_unlocked -%}
-            {% # Display the price label if the product is unlocked %}
-            <div class="free-item-price-label">
-              <div class="tier-label">
-                <span>Free</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7.58268 1.75008L8.59429 4.38025C8.75879 4.80797 8.84105 5.02183 8.96896 5.20171C9.08232 5.36115 9.22162 5.50044 9.38105 5.61381C9.56094 5.74172 9.77479 5.82397 10.2025 5.98848L12.8327 7.00008L10.2025 8.01168C9.7748 8.17619 9.56094 8.25844 9.38105 8.38635C9.22162 8.49972 9.08232 8.63902 8.96896 8.79845C8.84105 8.97834 8.75879 9.19219 8.59429 9.61991L7.58268 12.2501L6.57108 9.61991C6.40657 9.19219 6.32432 8.97834 6.19641 8.79845C6.08304 8.63902 5.94375 8.49972 5.78432 8.38635C5.60443 8.25844 5.39057 8.17619 4.96285 8.01169L2.33268 7.00008L4.96285 5.98848C5.39057 5.82397 5.60443 5.74172 5.78432 5.61381C5.94375 5.50044 6.08304 5.36115 6.19641 5.20171C6.32432 5.02183 6.40657 4.80797 6.57108 4.38025L7.58268 1.75008Z" fill="#FFB503"></path>
-                </svg>
+  
+      {%- capture tier_progress_item -%}
+        <div class="tier-progress-box">
+          {% # Display product image %}
+          <div class="tier-product-image{% if is_unlocked %} unlocked{% endif %}">
+            {%- if free_product.featured_image != blank -%}
+              {{
+                free_product.featured_image
+                | image_url: width: 300
+                | image_tag:
+                  alt: free_product.featured_image.alt,
+                  loading: 'lazy',
+                  fetchpriority: 'low',
+                  widths: '50, 100, 200'
+              }}
+            {%- endif -%}
+          </div>
+  
+          <div class="tier-product-info">
+            {% if free_product.title != blank %}
+              {% # Display product title %}
+              <span class="link product-title">{{ free_product.title }}</span>
+            {% endif %}
+  
+            {%- if is_unlocked -%}
+              {% # Display the price label if the product is unlocked %}
+              <div class="free-item-price-label">
+                <div class="tier-label">
+                  <span>Free</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7.58268 1.75008L8.59429 4.38025C8.75879 4.80797 8.84105 5.02183 8.96896 5.20171C9.08232 5.36115 9.22162 5.50044 9.38105 5.61381C9.56094 5.74172 9.77479 5.82397 10.2025 5.98848L12.8327 7.00008L10.2025 8.01168C9.7748 8.17619 9.56094 8.25844 9.38105 8.38635C9.22162 8.49972 9.08232 8.63902 8.96896 8.79845C8.84105 8.97834 8.75879 9.19219 8.59429 9.61991L7.58268 12.2501L6.57108 9.61991C6.40657 9.19219 6.32432 8.97834 6.19641 8.79845C6.08304 8.63902 5.94375 8.49972 5.78432 8.38635C5.60443 8.25844 5.39057 8.17619 4.96285 8.01169L2.33268 7.00008L4.96285 5.98848C5.39057 5.82397 5.60443 5.74172 5.78432 5.61381C5.94375 5.50044 6.08304 5.36115 6.19641 5.20171C6.32432 5.02183 6.40657 4.80797 6.57108 4.38025L7.58268 1.75008Z" fill="#FFB503"></path>
+                  </svg>
+                </div>
+                <div class="compare-price">
+                  <s>{{ free_product.compare_at_price | money }}</s>
+                </div>
               </div>
-              <div class="compare-price">
-                <s>{{ free_product.compare_at_price | money }}</s>
-              </div>
-            </div>
-          {% endif %}
+            {% endif %}
+          </div>
         </div>
-      </div>
-    {%- endcapture -%}  
-
-    {% # Display the free product if unlocked, based on progress type %}
-    {%- if progress_type == 'add' or is_current_tier -%}
-      {% if is_unlocked %}
+      {%- endcapture -%}  
+  
+      {% # Display the free product if unlocked, based on progress type %}
+      {%- if progress_type == 'add' or is_current_tier -%}
+        {% if is_unlocked %}
+          {{ tier_progress_item }}
+        {% endif %}
+  
+      {%- elsif progress_type == 'replace' and is_current_tier -%}
+        {% # Show only the most recent eligible product for 'replace' progress type %}
         {{ tier_progress_item }}
-      {% endif %}
-
-    {%- elsif progress_type == 'replace' and is_current_tier -%}
-      {% # Show only the most recent eligible product for 'replace' progress type %}
-      {{ tier_progress_item }}
-    {%- endif -%}
-  {%- endfor -%}
-</div>
-
-<style>
-  .tier-progress-free-items {
-    display: flex;
-    flex-direction: column-reverse;
-  }
-  .tier-progress-free-items .tier-product-image {
-    height: 70px;
-    width: 70px;
-  }
-  .tier-progress-free-items .tier-product-image img {
-    object-fit: cover;
-    height: 100%;
-    width: 100%;
-  }
-  .tier-progress-free-items .tier-progress-box {
-    display: flex;
-    gap: 1rem;
-    border-bottom: .1rem solid rgb(var(--color-border));
-    padding-bottom: 1.6rem;
-    margin-bottom: 1.6rem;
-  }
-  .tier-progress-free-items .product-title {
-    margin-inline-end: 2rem;
-    font-family: var(--font-heading-family);
-    font-weight: 500;
-  }
-  .tier-progress-free-items .free-item-price-label {
-    display: flex;
-    gap: 0.5rem;
-    align-items: baseline;
-  }
-  .tier-progress-free-items .free-item-price-label s {
-    color: rgb(33, 35, 38, 0.7);
-    font-size: 12px;
-    font-weight: 400;
-  }
-  .tier-progress-free-items .free-item-price-label .tier-label {
-    font-weight: 600;
-    font-size: 14px;
-    color: #278816;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .tier-progress-free-items .compare-price {
-    display: flex;
-    align-items: center;
-  }
-  @media screen and (min-width: 750px) {
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+  
+  <style>
     .tier-progress-free-items {
-      padding-inline-end: 1.5rem;
+      display: flex;
+      flex-direction: column-reverse;
     }
-  }
-</style>
+    .tier-progress-free-items .tier-product-image {
+      height: 70px;
+      width: 70px;
+    }
+    .tier-progress-free-items .tier-product-image img {
+      object-fit: cover;
+      height: 100%;
+      width: 100%;
+    }
+    .tier-progress-free-items .tier-progress-box {
+      display: flex;
+      gap: 1rem;
+      border-bottom: .1rem solid rgb(var(--color-border));
+      padding-bottom: 1.6rem;
+      margin-bottom: 1.6rem;
+    }
+    .tier-progress-free-items .product-title {
+      margin-inline-end: 2rem;
+      font-family: var(--font-heading-family);
+      font-weight: 500;
+    }
+    .tier-progress-free-items .free-item-price-label {
+      display: flex;
+      gap: 0.5rem;
+      align-items: baseline;
+    }
+    .tier-progress-free-items .free-item-price-label s {
+      color: rgb(33, 35, 38, 0.7);
+      font-size: 12px;
+      font-weight: 400;
+    }
+    .tier-progress-free-items .free-item-price-label .tier-label {
+      font-weight: 600;
+      font-size: 14px;
+      color: #278816;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .tier-progress-free-items .compare-price {
+      display: flex;
+      align-items: center;
+    }
+    @media screen and (min-width: 750px) {
+      .tier-progress-free-items {
+        padding-inline-end: 1.5rem;
+      }
+    }
+  </style>
+{%- endif -%}
