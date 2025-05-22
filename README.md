@@ -12,8 +12,6 @@
 `{{ shop.metafields.global.tier_data }}`
 ```
 {
-  "enable_tier_progress_bar": true,
-  "tier_progress_type": "replace",
   "tier": [
     {
       "threshold": 700,
